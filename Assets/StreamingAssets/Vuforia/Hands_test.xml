@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<QCARConfig>
+    <Tracking>
+        <ImageTarget name="Single" size="4.750000 4.750000"/>
+        <ImageTarget name="Pyramid.Front" size="5.000000 5.000000"/>
+        <ImageTarget name="Pyramid.Top" size="5.000000 5.000000"/>
+        <ImageTarget name="Pyramid.Left" size="5.000000 5.000000"/>
+        <ImageTarget name="Prysm.Front" size="4.800000 4.800000"/>
+        <ImageTarget name="Prysm.Left" size="4.800000 4.800000"/>
+        <ImageTarget name="Small_2.Right" size="3.500000 3.500000"/>
+        <ImageTarget name="Small_2.Front" size="3.500000 3.500000"/>
+        <ImageTarget name="Small_2.Top" size="3.500000 3.500000"/>
+        <ImageTarget name="Small_2.Left" size="3.500000 3.500000"/>
+        <ImageTarget name="Small_1.Right" size="3.500000 3.500000"/>
+        <ImageTarget name="Small_1.Front" size="3.500000 3.500000"/>
+        <ImageTarget name="Small_1.Top" size="3.500000 3.500000"/>
+        <ImageTarget name="Small_1.Left" size="3.500000 3.500000"/>
+        <ImageTarget name="Big.Right" size="5.000000 5.000000"/>
+        <ImageTarget name="Big.Front" size="5.000000 5.000000"/>
+        <ImageTarget name="Big.Top" size="5.000000 5.000000"/>
+        <ImageTarget name="Big.Left" size="5.000000 5.000000"/>
+        <MultiTarget name="Pyramid">
+            <Part name="Pyramid.Left" translation="-2.5 0 0" rotation="AD: 0 1 0 -90"/>
+            <Part name="Pyramid.Front" translation="0 0 2.5" rotation="AD: 1 0 0 0"/>
+            <Part name="Pyramid.Top" translation="0 2.5 0" rotation="AD: 1 0 0 -90"/>
+        </MultiTarget>
+        <MultiTarget name="Prysm">
+            <Part name="Prysm.Left" translation="-2.4000000953674316 0 0" rotation="AD: 0 1 0 -90"/>
+            <Part name="Prysm.Front" translation="0 0 2.4000000953674316" rotation="AD: 1 0 0 0"/>
+        </MultiTarget>
+        <MultiTarget name="Small_2">
+            <Part name="Small_2.Left" translation="-1.75 0 0" rotation="AD: 0 1 0 -90"/>
+            <Part name="Small_2.Right" translation="1.75 0 0" rotation="AD: 0 1 0 90"/>
+            <Part name="Small_2.Front" translation="0 0 1.75" rotation="AD: 1 0 0 0"/>
+            <Part name="Small_2.Top" translation="0 1.75 0" rotation="AD: 1 0 0 -90"/>
+        </MultiTarget>
+        <MultiTarget name="Small_1">
+            <Part name="Small_1.Left" translation="-1.75 0 0" rotation="AD: 0 1 0 -90"/>
+            <Part name="Small_1.Right" translation="1.75 0 0" rotation="AD: 0 1 0 90"/>
+            <Part name="Small_1.Front" translation="0 0 1.75" rotation="AD: 1 0 0 0"/>
+            <Part name="Small_1.Top" translation="0 1.75 0" rotation="AD: 1 0 0 -90"/>
+        </MultiTarget>
+        <MultiTarget name="Big">
+            <Part name="Big.Left" translation="-2.5 0 0" rotation="AD: 0 1 0 -90"/>
+            <Part name="Big.Right" translation="2.5 0 0" rotation="AD: 0 1 0 90"/>
+            <Part name="Big.Front" translation="0 0 2.5" rotation="AD: 1 0 0 0"/>
+            <Part name="Big.Top" translation="0 2.5 0" rotation="AD: 1 0 0 -90"/>
+        </MultiTarget>
+    </Tracking>
+</QCARConfig>
