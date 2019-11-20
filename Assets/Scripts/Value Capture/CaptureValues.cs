@@ -8,16 +8,15 @@ public class CaptureValues : MonoBehaviour
 {
     public GameObject[] Markers;
     public Text Timer;
-    public int SampleFrames = 60;
+    public int NumSamples = 60;
+    public int SampleFrames = 1;
     public int id = 1;
     public bool Overwrite = true;
     public int SecondsBeforeCapture = 3;
     public string fileName = "values.csv";
     public InputField idField;
 
-    private List<FrameInfo>[] frames;
-    private Quaternion[] iRot;
-    private Vector3[] iPos;
+    private List<FrameInfoIntermediate>[] frames;
     private bool capturing = false;
     private bool preparing = false;
     private bool hasCaptured = false;
@@ -26,12 +25,10 @@ public class CaptureValues : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        frames = new List<FrameInfo>[Markers.Length];
-        iRot = new Quaternion[Markers.Length];
-        iPos = new Vector3[Markers.Length];
+        frames = new List<FrameInfoIntermediate>[Markers.Length];
         for (int i = 0; i < Markers.Length; i++)
         {
-            frames[i] = new List<FrameInfo>();
+            frames[i] = new List<FrameInfoIntermediate>();
         }
     }
 
@@ -47,12 +44,6 @@ public class CaptureValues : MonoBehaviour
                 capturing = true;
                 Timer.text = 0.ToString();
                 Timer.color = Color.red;
-                for (int i = 0; i < Markers.Length; i++)
-                {
-                    var obj = Markers[i].transform;
-                    iRot[i] = obj.rotation;
-                    iPos[i] = obj.position;
-                }
             }
             else
             {
@@ -65,17 +56,34 @@ public class CaptureValues : MonoBehaviour
             {
                 var obj = Markers[i].transform;
                 var marker = Markers[i].GetComponent<TrackableBehaviour>();
-                frames[i].Add(new FrameInfo(obj.position - iPos[i], obj.rotation * Quaternion.Inverse(iRot[i]),
-                    marker.CurrentStatus == TrackableBehaviour.Status.TRACKED));
+                frames[i].Add(new FrameInfoIntermediate(obj.position, obj.forward,
+                    marker.CurrentStatus == TrackableBehaviour.Status.TRACKED ? 1 : 0));
             }
-            if (frames[0].Count == SampleFrames)
+            if (frames[0].Count > NumSamples * SampleFrames)
             {
-                capturing = false;
-                Timer.color = Color.black;
-                WriteToSheet();
+                List<FrameInfo>[] avgFrames = new List<FrameInfo>[Markers.Length];
                 for (int i = 0; i < Markers.Length; i++)
                 {
-                    frames[i] = new List<FrameInfo>();
+                    avgFrames[i] = new List<FrameInfo>();
+                    for (int j = NumSamples * SampleFrames; j >= SampleFrames; j -= SampleFrames)
+                    {
+                        var before = frames[i][j - SampleFrames];
+                        var after = frames[i][j];
+                        var avg = new FrameInfo(after.position - before.position, Quaternion.FromToRotation(before.forward, after.forward), 0);
+                        for (int k = j - SampleFrames + 1; k <= j; k++)
+                        {
+                            avg.visible += frames[i][k].visible;
+                        }
+                        avg.visible /= SampleFrames;
+                        avgFrames[i].Insert(0, avg);
+                    }
+                }
+                capturing = false;
+                Timer.color = Color.black;
+                WriteToSheet(avgFrames);
+                for (int i = 0; i < Markers.Length; i++)
+                {
+                    frames[i] = new List<FrameInfoIntermediate>();
                 }
             }
         }
@@ -106,9 +114,9 @@ public class CaptureValues : MonoBehaviour
             using (System.IO.StreamWriter file =
                 new System.IO.StreamWriter(Application.persistentDataPath + "/" + fileName, !Overwrite))
             {
-                for (int i = 0; i < SampleFrames; i++)
+                for (int i = 0; i < NumSamples; i++)
                 {
-                    file.Write(Header(i) + (i == SampleFrames - 1 ? ",id" : ","));
+                    file.Write(Header(i) + (i == NumSamples - 1 ? ",id" : ","));
                 }
             }
             hasCaptured = true;
@@ -117,21 +125,21 @@ public class CaptureValues : MonoBehaviour
         curSeconds = SecondsBeforeCapture;
     }
 
-    void WriteToSheet()
+    void WriteToSheet(List<FrameInfo>[] frames)
     {
         using (System.IO.StreamWriter file =
             new System.IO.StreamWriter(Application.persistentDataPath + "/" + fileName, true))
         {
             file.Write("\n");
-            for (int i = 0; i < SampleFrames; i++)
+            for (int i = 0; i < NumSamples; i++)
             {
                 for (int j = 0; j < Markers.Length; j++)
                 {
                     var frame = frames[j][i];
                     var pos = frame.position;
                     var rot = frame.rotation;
-                    file.Write(pos.x + "," + pos.y + "," + pos.z + "," + rot.x + "," + rot.y + "," + rot.z + "," + rot.w + "," + (frame.visible ? 1 : 0) +
-                        (j == Markers.Length - 1 && i == SampleFrames - 1 ? "," + id : ","));
+                    file.Write(frame.visible + "," + pos.x + "," + pos.y + "," + pos.z + "," + rot.x + "," + rot.y + "," + rot.z + "," + rot.w +
+                        (j == Markers.Length - 1 && i == NumSamples - 1 ? "," + id : ","));
                 }
             }
         }

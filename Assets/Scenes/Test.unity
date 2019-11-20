@@ -327,8 +327,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Markers:
   - {fileID: 2010328480}
+  - {fileID: 307971267}
   Result: {fileID: 669609347}
-  SampleFrames: 60
+  NumSamples: 5
+  SampleFrames: 12
   fileName: values.csv
 --- !u!4 &446822453
 Transform:

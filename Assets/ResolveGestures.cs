@@ -10,24 +10,21 @@ public class ResolveGestures : MonoBehaviour
 {
     public GameObject[] Markers;
     public Text Result;
-    public int SampleFrames = 60;
+    public int NumSamples = 60;
+    public int SampleFrames = 1;
     public string fileName = "values.csv";
 
-    private List<FrameInfo>[] frames;
-    private Quaternion[] iRot;
-    private Vector3[] iPos;
+    private List<FrameInfoIntermediate>[] frames;
 
     private Forest forest;
 
     // Start is called before the first frame update
     void Start()
     {
-        frames = new List<FrameInfo>[Markers.Length];
-        iRot = new Quaternion[Markers.Length];
-        iPos = new Vector3[Markers.Length];
+        frames = new List<FrameInfoIntermediate>[Markers.Length];
         for (int i = 0; i < Markers.Length; i++)
         {
-            frames[i] = new List<FrameInfo>();
+            frames[i] = new List<FrameInfoIntermediate>();
         }
         string dataPath = Application.persistentDataPath;
         ForestGrowParameters p = new ForestGrowParameters
@@ -38,7 +35,7 @@ public class ResolveGestures : MonoBehaviour
             ItemSubsetCountRatio = 0.6f,
             TrainingDataPath = dataPath + "/" + fileName,
             MaxItemCountInCategory = 5,
-            TreeCount = 4,
+            TreeCount = 10,
             SplitMode = SplitMode.GINI
         };
         // Method to "grow" the forest
@@ -54,23 +51,36 @@ public class ResolveGestures : MonoBehaviour
         {
             var obj = Markers[i].transform;
             var marker = Markers[i].GetComponent<TrackableBehaviour>();
-            frames[i].Add(new FrameInfo(obj.position - iPos[i], obj.rotation * Quaternion.Inverse(iRot[i]),
-                marker.CurrentStatus == TrackableBehaviour.Status.TRACKED));
+            frames[i].Add(new FrameInfoIntermediate(obj.position, obj.forward,
+                marker.CurrentStatus == TrackableBehaviour.Status.TRACKED ? 1 : 0));
         }
-        if (frames[0].Count > SampleFrames)
+        if (frames[0].Count > NumSamples * SampleFrames)
         {
+            List<FrameInfo>[] avgFrames = new List<FrameInfo>[Markers.Length];
             for (int i = 0; i < Markers.Length; i++)
             {
-                frames[i].RemoveAt(0);
+                avgFrames[i] = new List<FrameInfo>();
+                for (int j = NumSamples * SampleFrames; j >= SampleFrames; j -= SampleFrames)
+                {
+                    var before = frames[i][j - SampleFrames];
+                    var after = frames[i][j];
+                    var avg = new FrameInfo(after.position - before.position, Quaternion.FromToRotation(before.forward, after.forward), 0);
+                    for (int k = j - SampleFrames + 1; k <= j; k++)
+                    {
+                        avg.visible += frames[i][k].visible;
+                    }
+                    avg.visible /= SampleFrames;
+                    avgFrames[i].Insert(0, avg);
+                }
             }
             IItemNumerical item = forest.CreateItem();
-            for (int i = 0; i < SampleFrames; i++)
+            for (int i = 0; i < NumSamples; i++)
             {
                 for (int j = 0; j < Markers.Length; j++)
                 {
-                    var frame = frames[j][i];
+                    var frame = avgFrames[j][i];
                     var obj = Markers[j];
-                    item.SetValue(obj.name + "_visible_" + i, frame.visible ? 1 : 0);
+                    item.SetValue(obj.name + "_visible_" + i, frame.visible);
                     item.SetValue(obj.name + "_px_" + i, frame.position.x);
                     item.SetValue(obj.name + "_py_" + i, frame.position.y);
                     item.SetValue(obj.name + "_pz_" + i, frame.position.z);
@@ -81,9 +91,12 @@ public class ResolveGestures : MonoBehaviour
                 }
             }
             double gesture = forest.Resolve(item);
-            if (gesture != 1)
-                Debug.Log("YEET");
+            Debug.Log(gesture);
             Result.text = gesture.ToString();
+            for (int i = 0; i < Markers.Length; i++)
+            {
+                frames[i].RemoveAt(0);
+            }
         }
     }
 

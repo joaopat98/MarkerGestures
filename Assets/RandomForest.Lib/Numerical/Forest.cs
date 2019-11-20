@@ -7,7 +7,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace RandomForest.Lib.Numerical
@@ -41,7 +40,7 @@ namespace RandomForest.Lib.Numerical
             var nameGenerator = new NameGenerator();
             foreach (var tree in _trees)
             {
-                string path = string.Format(@"{0}\{1}.json", di.FullName, nameGenerator.Generate("decision-tree-"));
+                string path = string.Format(@"{0}/{1}.json", di.FullName, nameGenerator.Generate("decision-tree-"));
                 (_exportStrategy as ExportToJson).Export(tree, path);
             }
         }
@@ -58,7 +57,7 @@ namespace RandomForest.Lib.Numerical
             Parallel.ForEach(_trees, (t) =>
             {
                 string name = nameGenerator.Generate("decision-tree-");
-                string path = string.Format(@"{0}\{1}.json", di.FullName, name);
+                string path = string.Format(@"{0}/{1}.json", di.FullName, name);
                 (_exportStrategy as ExportToJson).Export(t, path);
             });
         }
@@ -76,7 +75,7 @@ namespace RandomForest.Lib.Numerical
 
             _trees.Clear();
             FileInfo[] fis = di.GetFiles("decision-tree-*.json");
-            foreach(var fi in fis)
+            foreach (var fi in fis)
             {
                 Tree.Tree tree = Tree.Import.ImportFromJson.Read(fi.FullName);
                 _trees.Add(tree);
@@ -92,7 +91,7 @@ namespace RandomForest.Lib.Numerical
 
             _trees.Clear();
             FileInfo[] fis = di.GetFiles("decision-tree-*.json");
-            Parallel.ForEach(fis, (fi) => 
+            Parallel.ForEach(fis, (fi) =>
             {
                 Tree.Tree tree = Tree.Import.ImportFromJson.Read(fi.FullName);
                 _trees.Add(tree);
@@ -119,7 +118,7 @@ namespace RandomForest.Lib.Numerical
         {
             _trees.Clear();
 
-            Parallel.For(0, treeCount, (i) => 
+            Parallel.For(0, treeCount, (i) =>
             {
                 NameGenerator nameGenerator = new NameGenerator();
                 ItemNumericalSet subset = _set.GetRandomSubset(itemSubsetCountRatio, true);
@@ -174,9 +173,10 @@ namespace RandomForest.Lib.Numerical
             object obj = new object();
 
             double sum = 0;
-            Parallel.ForEach(_trees, (t) => {
+            Parallel.ForEach(_trees, (t) =>
+            {
                 double d = t.Resolve(item);
-                lock(obj)
+                lock (obj)
                 {
                     sum = sum + d;
                 }
@@ -192,7 +192,7 @@ namespace RandomForest.Lib.Numerical
 
             int qty = 0;
 
-            switch(growParameters.SplitMode)
+            switch (growParameters.SplitMode)
             {
                 case SplitMode.GINI:
                     _splitter = new SplitterGini();
@@ -209,7 +209,7 @@ namespace RandomForest.Lib.Numerical
 
             InitializeItemSet(growParameters.TrainingDataPath);
             qty = GenerateTreesTPL(
-                growParameters.TreeCount, 
+                growParameters.TreeCount,
                 growParameters.ResolutionFeatureName,
                 growParameters.MaxItemCountInCategory,
                 growParameters.ItemSubsetCountRatio);
