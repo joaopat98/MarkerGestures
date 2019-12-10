@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using Newtonsoft.Json;
 using UnityEngine.UI;
 using Vuforia;
 
@@ -11,10 +12,11 @@ public class CaptureValues : MonoBehaviour
     public int NumSamples = 60;
     public int SampleFrames = 1;
     public int id = 1;
-    public bool Overwrite = true;
     public int SecondsBeforeCapture = 3;
     public string fileName = "values.csv";
     public InputField idField;
+    public InputField numSamplesField;
+    public InputField sampleFramesField;
 
     private List<FrameInfoIntermediate>[] frames;
     private bool capturing = false;
@@ -107,20 +109,24 @@ public class CaptureValues : MonoBehaviour
         return str;
     }
 
+    public void Overwrite()
+    {
+        Settings settings = JsonConvert.DeserializeObject<Settings>(System.IO.File.ReadAllText(Application.persistentDataPath + "/settings.json"));
+        settings.NumSamples = NumSamples;
+        settings.SampleFrames = SampleFrames;
+        System.IO.File.WriteAllText(Application.persistentDataPath + "/settings.json", JsonConvert.SerializeObject(settings));
+        using (System.IO.StreamWriter file =
+                new System.IO.StreamWriter(Application.persistentDataPath + "/" + fileName, false))
+        {
+            for (int i = 0; i < NumSamples; i++)
+            {
+                file.Write(Header(i) + (i == NumSamples - 1 ? ",id" : ","));
+            }
+        }
+    }
+
     public void PrepareCapture()
     {
-        if (Overwrite && !hasCaptured)
-        {
-            using (System.IO.StreamWriter file =
-                new System.IO.StreamWriter(Application.persistentDataPath + "/" + fileName, !Overwrite))
-            {
-                for (int i = 0; i < NumSamples; i++)
-                {
-                    file.Write(Header(i) + (i == NumSamples - 1 ? ",id" : ","));
-                }
-            }
-            hasCaptured = true;
-        }
         preparing = true;
         curSeconds = SecondsBeforeCapture;
     }
@@ -128,7 +134,7 @@ public class CaptureValues : MonoBehaviour
     void WriteToSheet(List<FrameInfo>[] frames)
     {
         using (System.IO.StreamWriter file =
-            new System.IO.StreamWriter(Application.persistentDataPath + "/" + fileName, true))
+         new System.IO.StreamWriter(Application.persistentDataPath + "/" + fileName, true))
         {
             file.Write("\n");
             for (int i = 0; i < NumSamples; i++)
@@ -145,16 +151,20 @@ public class CaptureValues : MonoBehaviour
         }
     }
 
-    public void setOverwrite(bool value)
-    {
-        Overwrite = value;
-    }
-
     public void setId()
     {
         id = int.Parse(idField.text);
     }
 
+    public void setNumSamples()
+    {
+        NumSamples = int.Parse(numSamplesField.text);
+    }
+
+    public void setSampleFrames()
+    {
+        SampleFrames = int.Parse(sampleFramesField.text);
+    }
 
     public void GoToTest()
     {
