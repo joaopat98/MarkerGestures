@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public interface IGrabbable
+public abstract class IGrabbable : IAugmentable
 {
-    void Grab(Transform parent);
-    void Release();
-    void GetUpdate(Transform parent);
+    public abstract void Grab(GestureResolver parent);
+    public abstract void Release();
+    public abstract void GetUpdate(GestureResolver parent);
 }
