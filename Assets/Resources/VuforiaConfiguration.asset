@@ -17,51 +17,25 @@ MonoBehaviour:
     ufoLicenseKey: QWY1OSt6Ny8vLy8vQUFBQUtFdnpxRzJIemtaOXB2S3pMbXphR0owRkI0RXZVcktxU284QzkrNzh0RFhEdXA1SnE1Q3NKMnh3VFBPNHJKd2ZwTmh0S3hoOEJBTGVESEpaeTVBWmFzSzc5YW9jM1pNM0lGMFQ1Nk91UE9SeGtoK2JDUVBIMnFub0xWMXloQU5iMlR5dEFNV09iRXMvUXk1R1p2dkthSUVRUkpucFVldElJT3g1RTJjbzVvUW1oVE1ubWpUTmJ3S2lZTTFHT0k4VXYxRkhMZVhTaXM3MzdwTGJLaVd6elJ3b3NyRzhGdHZUREJDSTI2TUpoejdyMzFHSWkxUzlkblYyWjZDYmtHZUxXdm5JQW4wNUx6Rmc5azhmRW4ySlJLTG5FUFkrMGE4M0V4ajg4bFJMR1o2eFJlSWFnYnZnNFhCcHlhRFQ3Tnk0U2VCTDdKeXRrQ2lGRkJjY01UZ2VsTXJiV3RMNTVicElCcnFoVXdIOHNXQUI=
     delayedInitialization: 0
     cameraDeviceModeSetting: -3
-    maxSimultaneousImageTargets: 8
-    maxSimultaneousObjectTargets: 2
+    maxSimultaneousImageTargets: 5
+    maxSimultaneousObjectTargets: 3
     useDelayedLoadingObjectTargets: 0
     modelTargetRecoWhileExtendedTracked: 1
-    version: 8.3.8
-    eulaAcceptedVersions: '{"Values":["8.3"]}'
-  digitalEyewear:
-    cameraOffset: 0.06
-    distortionRenderingLayer: 31
-    eyewearType: 0
-    stereoFramework: 0
-    seeThroughConfiguration: 0
-    viewerName: 
-    viewerManufacturer: 
-    useCustomViewer: 0
-    customViewer:
-      Version: 0
-      Name: 
-      Manufacturer: 
-      ButtonType: 0
-      ScreenToLensDistance: 0
-      InterLensDistance: 0
-      TrayAlignment: 0
-      LensCenterToTrayDistance: 0
-      DistortionCoefficients: {x: 0, y: 0}
-      FieldOfView: {x: 0, y: 0, z: 0, w: 0}
-      ContainsMagnet: 0
+    version: 8.6.7
+    eulaAcceptedVersions: '{"Values":["8.3","8.5","8.6"]}'
+    modelTargetMode: 0
   database:
     disableModelExtraction: 0
   videoBackground:
-    clippingMode: 0
     numDivisions: 2
     videoBackgroundShader: {fileID: 4800000, guid: f40623b353e2f1943b1b3ba42975db7a,
       type: 3}
-    matteShader: {fileID: 4800000, guid: 66d0d78a3000021448b598bb54a3bfdf, type: 3}
     videoBackgroundEnabled: 1
   deviceTracker:
     autoInitTracker: 1
     autoStartTracker: 1
-    arcoreRequirement: 1
-    trackingMode: 1
-    posePrediction: 0
-    modelCorrectionMode: 0
-    modelTransformEnabled: 0
-    modelTransform: {x: 0, y: 0.1, z: -0.1}
+    arcoreRequirement: 2
+    autoImportArcore: 1
   smartTerrain:
     autoInitTracker: 0
     autoStartTracker: 0
