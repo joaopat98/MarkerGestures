@@ -17,7 +17,8 @@ public class GestureResolver : MonoBehaviour
     public int SampleFrames = 1;
     public string fileName = "values.csv";
 
-    public Color BlinkColor;
+    public Material BlinkMaterial, BadMaterial, GoodMaterial;
+    public GameObject HandOpen, HandClosed;
 
     private List<FrameInfoIntermediate>[] frames;
 
@@ -38,6 +39,7 @@ public class GestureResolver : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        HandClosed.SetActive(false);
         var settings = JsonConvert.DeserializeObject<Settings>(System.IO.File.ReadAllText(Application.persistentDataPath + "/settings.json"));
         NumSamples = settings.NumSamples;
         SampleFrames = settings.SampleFrames;
@@ -98,8 +100,16 @@ public class GestureResolver : MonoBehaviour
     }
 
     // Update is called once per frame
-    void Update()
+    void FixedUpdate()
     {
+        if (Markers[1].GetComponent<TrackableBehaviour>().CurrentStatus != TrackableBehaviour.Status.TRACKED)
+        {
+            SetMaterial(BadMaterial);
+        }
+        else
+        {
+            SetMaterial(GoodMaterial);
+        }
         if (alpha > 0)
         {
             var color = Action.color;
@@ -158,36 +168,32 @@ public class GestureResolver : MonoBehaviour
                 if (captureDuration >= gestureThreshold)
                 {
                     captureDuration = 0;
-                    bool visible = true;
-                    foreach (var marker in Markers)
+                    bool visible = Markers[1].GetComponent<TrackableBehaviour>().CurrentStatus == TrackableBehaviour.Status.TRACKED;
+                    switch (capturedAction)
                     {
-                        if (marker.GetComponent<TrackableBehaviour>().CurrentStatus != TrackableBehaviour.Status.TRACKED)
-                        {
-                            visible = false;
+                        case 1:
+                            Message("Hand close");
+                            OnHandClose();
+                            HalveFrameBuffers();
                             break;
-                        }
-                    }
-                    if (visible)
-                    {
-                        switch (capturedAction)
-                        {
-                            case 1:
-                                Message("Hand close");
-                                OnHandClose();
-                                HalveFrameBuffers();
-                                break;
-                            case 2:
+                        case 2:
+                            if (visible)
+                            {
                                 Message("Hand Open");
                                 OnHandOpen();
                                 HalveFrameBuffers();
-                                break;
-                            case 3:
+                            }
+                            break;
+                        case 3:
+                            if (visible)
+                            {
                                 Message("Move Right");
+                                OnSwipeRight();
                                 HalveFrameBuffers();
-                                break;
-                            default:
-                                break;
-                        }
+                            }
+                            break;
+                        default:
+                            break;
                     }
                 }
             }
@@ -224,25 +230,29 @@ public class GestureResolver : MonoBehaviour
         Message("oof");
     }
 
-    private IEnumerator BlinkMarker(GameObject marker)
+    void SetMaterial(Material material)
     {
-        var renderer = marker.GetComponent<Renderer>();
-        var oldColor = renderer.material.color;
-        renderer.material.color = BlinkColor;
-        yield return new WaitForSeconds(0.5f);
-        renderer.material.color = oldColor;
+        HandClosed.GetComponent<Renderer>().material = material;
+        HandOpen.GetComponent<Renderer>().material = material;
     }
 
-    public void BlinkMarkers()
+    public IEnumerator BlinkMarkers()
     {
-        foreach (var marker in Markers)
+        float t = 0;
+        while (t < 0.5f)
         {
-            StartCoroutine(BlinkMarker(marker));
+            SetMaterial(BlinkMaterial);
+            yield return new WaitForFixedUpdate();
+            t += Time.fixedDeltaTime;
         }
+        SetMaterial(GoodMaterial);
     }
 
     void OnHandClose()
     {
+        HandOpen.SetActive(false);
+        HandClosed.SetActive(true);
+        BlinkMarkers();
         var candidates = FindObjectsOfType<IGrabbable>();
         IGrabbable closest = null;
         float dist = Mathf.Infinity;
@@ -267,6 +277,9 @@ public class GestureResolver : MonoBehaviour
 
     void OnHandOpen()
     {
+        HandOpen.SetActive(true);
+        HandClosed.SetActive(false);
+        BlinkMarkers();
         if (Held)
         {
             Held.Release();
@@ -277,6 +290,7 @@ public class GestureResolver : MonoBehaviour
     void OnSwipeRight()
     {
 
+        BlinkMarkers();
     }
 
     public Transform GetTransform()
