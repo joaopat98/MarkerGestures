@@ -21,7 +21,6 @@ public class CaptureValues : MonoBehaviour
     private List<FrameInfoIntermediate>[] frames;
     private bool capturing = false;
     private bool preparing = false;
-    private bool hasCaptured = false;
     private float curSeconds = 0f;
 
     // Start is called before the first frame update

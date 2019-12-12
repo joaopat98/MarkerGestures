@@ -9,14 +9,14 @@ public class SliderGrabbable : IGrabbable
     List<IFloatCallBack> callBacks = new List<IFloatCallBack>();
     public override void GetUpdate(GestureResolver parent)
     {
-        var relHandPos = transform.parent.InverseTransformPoint(parent.GetTransform().position);
+        var relHandPos = transform.parent.InverseTransformPoint(parent.GetPosition());
         var newPos = transform.localPosition;
         newPos.x = Mathf.Clamp(relHandPos.x, -xRange, xRange);
         transform.localPosition = newPos;
         Value = 1 - ((newPos.x + xRange) / (xRange * 2));
         CallBacks();
         Debug.Log("Slider Val: " + Value);
-        if (Vector3.Distance(transform.position, parent.GetTransform().position) > parent.GrabRange)
+        if (Vector3.Distance(transform.position, parent.GetPosition()) > parent.GrabRange)
         {
             parent.ForceRelease();
         }

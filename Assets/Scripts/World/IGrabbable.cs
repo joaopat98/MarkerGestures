@@ -7,4 +7,9 @@ public abstract class IGrabbable : IAugmentable
     public abstract void Grab(GestureResolver parent);
     public abstract void Release();
     public abstract void GetUpdate(GestureResolver parent);
+
+    public virtual void ProximityUpdate(GestureResolver parent)
+    {
+
+    }
 }

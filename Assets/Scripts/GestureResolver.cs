@@ -7,6 +7,7 @@ using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using Vuforia;
 using Newtonsoft.Json;
+using System.Linq;
 
 public class GestureResolver : MonoBehaviour
 {
@@ -19,6 +20,8 @@ public class GestureResolver : MonoBehaviour
 
     public Material BlinkMaterial, BadMaterial, GoodMaterial;
     public GameObject HandOpen, HandClosed;
+
+    private Vector3 handCenter = Vector3.zero;
 
     private List<FrameInfoIntermediate>[] frames;
 
@@ -102,6 +105,11 @@ public class GestureResolver : MonoBehaviour
     // Update is called once per frame
     void FixedUpdate()
     {
+        if (handCenter == Vector3.zero && Markers[0].GetComponent<TrackableBehaviour>().CurrentStatus == TrackableBehaviour.Status.TRACKED)
+        {
+            handCenter = (Markers[0].transform.position + Markers[1].transform.position) / 2 - Markers[0].transform.position;
+            handCenter = Markers[0].transform.InverseTransformVector(handCenter);
+        }
         if (Markers[1].GetComponent<TrackableBehaviour>().CurrentStatus != TrackableBehaviour.Status.TRACKED)
         {
             SetMaterial(BadMaterial);
@@ -212,6 +220,11 @@ public class GestureResolver : MonoBehaviour
         {
             Held.GetUpdate(this);
         }
+
+        foreach (var grabbable in FindObjectsOfType<IGrabbable>())
+        {
+            grabbable.ProximityUpdate(this);
+        }
     }
 
     public void GoToTrain()
@@ -293,9 +306,9 @@ public class GestureResolver : MonoBehaviour
         BlinkMarkers();
     }
 
-    public Transform GetTransform()
+    public Vector3 GetPosition()
     {
-        return Markers[0].transform;
+        return Markers[0].transform.position + Markers[0].transform.TransformVector(handCenter);
     }
 
     public void ForceRelease()
