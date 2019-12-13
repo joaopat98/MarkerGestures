@@ -8,7 +8,6 @@ public class VolumeChanger : MonoBehaviour, IFloatCallBack
     public SliderController volumeSlider;
     public void ValueChanged(float value)
     {
-        Debug.Log("change volume to: " + value);
         source.volume = value;
     }
 

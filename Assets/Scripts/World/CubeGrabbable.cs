@@ -7,11 +7,12 @@ public class CubeGrabbable : IGrabbable
     private Vector3 offset;
     protected Rigidbody rb;
     public bool WasKinematic;
-    private Transform halo;
+    private GameObject halo;
+    public bool Held;
 
-    protected void Start()
+    protected void Awake()
     {
-        halo = transform.Find("Halo");
+        halo = transform.Find("Halo").gameObject;
         rb = GetComponent<Rigidbody>();
     }
 
@@ -23,11 +24,13 @@ public class CubeGrabbable : IGrabbable
     public override void Grab(GestureResolver parent)
     {
         rb.isKinematic = true;
+        Held = true;
         offset = transform.position - parent.GetPosition();
     }
 
     public override void Release()
     {
+        Held = false;
         rb.isKinematic = false;
         rb.velocity = Vector3.zero;
         rb.angularVelocity = Vector3.zero;
@@ -48,19 +51,12 @@ public class CubeGrabbable : IGrabbable
         }
         if (!PreviouslyTracked && Tracked)
         {
-            try
-            {
-                rb.isKinematic = WasKinematic;
-            }
-            catch (System.NullReferenceException ex)
-            {
-                Debug.Log(ex);
-            }
+            rb.isKinematic = WasKinematic;
         }
     }
 
     public override void ProximityUpdate(GestureResolver parent)
     {
-        halo.gameObject.SetActive(Vector3.Distance(parent.GetPosition(), transform.position) < parent.GrabRange);
+        halo.SetActive(Vector3.Distance(parent.GetPosition(), transform.position) < parent.GrabRange);
     }
 }

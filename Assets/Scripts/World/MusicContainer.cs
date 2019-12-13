@@ -5,27 +5,39 @@ using UnityEngine;
 public class MusicContainer : MonoBehaviour
 {
     public bool IsMain = false;
-    private AudioSource audioSource;
-    private MusicCube mCube;
+    public AudioSource audioSource;
+    public MusicCube mCube;
 
     // Start is called before the first frame update
 
     public void ReceiveCube(MusicCube cube)
     {
         mCube = cube;
-        if(IsMain)
+        mCube.transform.position = transform.position + new Vector3(0, -1f, 0);
+        if (IsMain)
         {
             if (cube.audioClip)
                 PlaySong(cube.audioClip);
-            else {
+            else
+            {
                 cube.importer.Loaded += PlaySong;
             }
         }
     }
 
+    public void RemoveCube()
+    {
+        if (IsMain)
+        {
+            audioSource.Stop();
+        }
+        mCube = null;
+    }
+
     void PlaySong(AudioClip clip)
     {
         audioSource.clip = clip;
+        audioSource.time = 0;
         audioSource.Play();
         mCube.importer.Loaded -= PlaySong;
     }
@@ -33,11 +45,5 @@ public class MusicContainer : MonoBehaviour
     void Awake()
     {
         audioSource = GetComponent<AudioSource>();
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
     }
 }

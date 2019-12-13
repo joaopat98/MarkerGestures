@@ -7,6 +7,13 @@ public class SliderGrabbable : IGrabbable
     private float xRange;
     public float Value;
     List<IFloatCallBack> callBacks = new List<IFloatCallBack>();
+    private GameObject halo;
+
+    protected void Awake()
+    {
+        halo = transform.Find("Halo").gameObject;
+    }
+
     public override void GetUpdate(GestureResolver parent)
     {
         var relHandPos = transform.parent.InverseTransformPoint(parent.GetPosition());
@@ -15,7 +22,6 @@ public class SliderGrabbable : IGrabbable
         transform.localPosition = newPos;
         Value = 1 - ((newPos.x + xRange) / (xRange * 2));
         CallBacks();
-        Debug.Log("Slider Val: " + Value);
         if (Vector3.Distance(transform.position, parent.GetPosition()) > parent.GrabRange)
         {
             parent.ForceRelease();
@@ -58,5 +64,10 @@ public class SliderGrabbable : IGrabbable
     void Update()
     {
 
+    }
+
+    public override void ProximityUpdate(GestureResolver parent)
+    {
+        halo.SetActive(Vector3.Distance(parent.GetPosition(), transform.position) < parent.GrabRange);
     }
 }

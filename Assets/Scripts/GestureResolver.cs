@@ -12,8 +12,6 @@ using System.Linq;
 public class GestureResolver : MonoBehaviour
 {
     public GameObject[] Markers;
-    public Text Result;
-    public Text Action;
     public int NumSamples = 60;
     public int SampleFrames = 1;
     public string fileName = "values.csv";
@@ -21,14 +19,10 @@ public class GestureResolver : MonoBehaviour
     public Material BlinkMaterial, BadMaterial, GoodMaterial;
     public GameObject HandOpen, HandClosed;
 
-    private Vector3 handCenter = Vector3.zero;
-
     private List<FrameInfoIntermediate>[] frames;
 
     private Forest forest;
-
-    public float alpha = 0;
-    public float disappearSpeed = 0.01f;
+    private bool showingGesture = false;
 
 
     private int capturedAction = -1;
@@ -36,8 +30,11 @@ public class GestureResolver : MonoBehaviour
     public float gestureThreshold = 0.75f;
 
     public float GrabRange = 5f;
+    public float SwipeRange = 20f;
 
     private IGrabbable Held;
+
+    public Transform GrabCenter;
 
     // Start is called before the first frame update
     void Start()
@@ -105,25 +102,16 @@ public class GestureResolver : MonoBehaviour
     // Update is called once per frame
     void FixedUpdate()
     {
-        if (handCenter == Vector3.zero && Markers[0].GetComponent<TrackableBehaviour>().CurrentStatus == TrackableBehaviour.Status.TRACKED)
+        if (!showingGesture)
         {
-            handCenter = (Markers[0].transform.position + Markers[1].transform.position) / 2 - Markers[0].transform.position;
-            handCenter = Markers[0].transform.InverseTransformVector(handCenter);
-        }
-        if (Markers[1].GetComponent<TrackableBehaviour>().CurrentStatus != TrackableBehaviour.Status.TRACKED)
-        {
-            SetMaterial(BadMaterial);
-        }
-        else
-        {
-            SetMaterial(GoodMaterial);
-        }
-        if (alpha > 0)
-        {
-            var color = Action.color;
-            color.a = alpha;
-            Action.color = color;
-            alpha -= disappearSpeed * Time.deltaTime;
+            if (Markers[1].GetComponent<TrackableBehaviour>().CurrentStatus != TrackableBehaviour.Status.TRACKED)
+            {
+                SetMaterial(BadMaterial);
+            }
+            else
+            {
+                SetMaterial(GoodMaterial);
+            }
         }
         for (int i = 0; i < Markers.Length; i++)
         {
@@ -176,27 +164,36 @@ public class GestureResolver : MonoBehaviour
                 if (captureDuration >= gestureThreshold)
                 {
                     captureDuration = 0;
-                    bool visible = Markers[1].GetComponent<TrackableBehaviour>().CurrentStatus == TrackableBehaviour.Status.TRACKED;
+                    int visible = 0;
+                    visible += Markers[0].GetComponent<TrackableBehaviour>().CurrentStatus == TrackableBehaviour.Status.TRACKED ? 1 : 0;
+                    visible += Markers[1].GetComponent<TrackableBehaviour>().CurrentStatus == TrackableBehaviour.Status.TRACKED ? 1 : 0;
                     switch (capturedAction)
                     {
                         case 1:
-                            Message("Hand close");
-                            OnHandClose();
-                            HalveFrameBuffers();
+                            if (visible > 0)
+                            {
+                                OnHandClose();
+                                HalveFrameBuffers();
+                            }
                             break;
                         case 2:
-                            if (visible)
+                            if (visible > 1)
                             {
-                                Message("Hand Open");
                                 OnHandOpen();
                                 HalveFrameBuffers();
                             }
                             break;
                         case 3:
-                            if (visible)
+                            if (visible > 0)
                             {
-                                Message("Move Right");
                                 OnSwipeRight();
+                                HalveFrameBuffers();
+                            }
+                            break;
+                        case 4:
+                            if (visible > 0)
+                            {
+                                OnSwipeLeft();
                                 HalveFrameBuffers();
                             }
                             break;
@@ -210,7 +207,6 @@ public class GestureResolver : MonoBehaviour
                 capturedAction = gestureRound;
                 captureDuration = 0;
             }
-            Result.text = gesture.ToString();
             for (int i = 0; i < Markers.Length; i++)
             {
                 frames[i].RemoveAt(0);
@@ -232,17 +228,6 @@ public class GestureResolver : MonoBehaviour
         SceneManager.LoadScene("Train");
     }
 
-    void Message(string msg)
-    {
-        alpha = 1;
-        Action.text = msg;
-    }
-
-    public void TestMessage()
-    {
-        Message("oof");
-    }
-
     void SetMaterial(Material material)
     {
         HandClosed.GetComponent<Renderer>().material = material;
@@ -251,30 +236,23 @@ public class GestureResolver : MonoBehaviour
 
     public IEnumerator BlinkMarkers()
     {
-        float t = 0;
-        while (t < 0.5f)
-        {
-            SetMaterial(BlinkMaterial);
-            yield return new WaitForFixedUpdate();
-            t += Time.fixedDeltaTime;
-        }
-        SetMaterial(GoodMaterial);
+        showingGesture = true;
+        SetMaterial(BlinkMaterial);
+        yield return new WaitForSeconds(0.5f);
+        showingGesture = false;
     }
 
     void OnHandClose()
     {
         HandOpen.SetActive(false);
         HandClosed.SetActive(true);
-        BlinkMarkers();
+        StartCoroutine(BlinkMarkers());
         var candidates = FindObjectsOfType<IGrabbable>();
         IGrabbable closest = null;
         float dist = Mathf.Infinity;
-        Debug.Log(candidates.Length);
         foreach (var candidate in candidates)
         {
-            float curDist = Vector3.Distance(Markers[0].transform.position, candidate.transform.position);
-            Debug.Log(curDist);
-            Debug.Log(candidate);
+            float curDist = Vector3.Distance(GetPosition(), candidate.transform.position);
             if (curDist < GrabRange && curDist < dist)
             {
                 closest = candidate;
@@ -292,7 +270,7 @@ public class GestureResolver : MonoBehaviour
     {
         HandOpen.SetActive(true);
         HandClosed.SetActive(false);
-        BlinkMarkers();
+        StartCoroutine(BlinkMarkers());
         if (Held)
         {
             Held.Release();
@@ -302,13 +280,51 @@ public class GestureResolver : MonoBehaviour
 
     void OnSwipeRight()
     {
+        StartCoroutine(BlinkMarkers());
+        var candidates = FindObjectsOfType<ISwipable>();
+        ISwipable closest = null;
+        float dist = Mathf.Infinity;
+        foreach (var candidate in candidates)
+        {
+            float curDist = Vector3.Distance(GetPosition(), candidate.transform.position);
+            if (curDist < SwipeRange && curDist < dist)
+            {
+                closest = candidate;
+                dist = curDist;
+            }
+        }
+        if (closest)
+        {
+            closest.SwipeRight(this);
+        }
 
-        BlinkMarkers();
+    }
+
+    void OnSwipeLeft()
+    {
+        StartCoroutine(BlinkMarkers());
+        var candidates = FindObjectsOfType<ISwipable>();
+        ISwipable closest = null;
+        float dist = Mathf.Infinity;
+        foreach (var candidate in candidates)
+        {
+            float curDist = Vector3.Distance(GetPosition(), candidate.transform.position);
+            if (curDist < SwipeRange && curDist < dist)
+            {
+                closest = candidate;
+                dist = curDist;
+            }
+        }
+        if (closest)
+        {
+            closest.SwipeLeft(this);
+        }
+
     }
 
     public Vector3 GetPosition()
     {
-        return Markers[0].transform.position + Markers[0].transform.TransformVector(handCenter);
+        return GrabCenter.position;
     }
 
     public void ForceRelease()
