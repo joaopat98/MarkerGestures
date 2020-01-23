@@ -4,11 +4,11 @@ using UnityEngine;
 
 public abstract class IGrabbable : IAugmentable
 {
-    public abstract void Grab(GestureResolver parent);
+    public abstract void Grab(GestureResolverExample parent);
     public abstract void Release();
-    public abstract void GetUpdate(GestureResolver parent);
+    public abstract void GetUpdate(GestureResolverExample parent);
 
-    public virtual void ProximityUpdate(GestureResolver parent)
+    public virtual void ProximityUpdate(GestureResolverExample parent)
     {
 
     }

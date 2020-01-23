@@ -4,6 +4,6 @@ using UnityEngine;
 
 public abstract class ISwipable : IAugmentable
 {
-    public abstract void SwipeLeft(GestureResolver parent);
-    public abstract void SwipeRight(GestureResolver parent);
+    public abstract void SwipeLeft(GestureResolverExample parent);
+    public abstract void SwipeRight(GestureResolverExample parent);
 }

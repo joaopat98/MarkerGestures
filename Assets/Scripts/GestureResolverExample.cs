@@ -9,12 +9,15 @@ using Vuforia;
 using Newtonsoft.Json;
 using System.Linq;
 
-public class GestureResolver : MonoBehaviour
+public class GestureResolverExample : MonoBehaviour
 {
     public GameObject[] Markers;
     public int NumSamples = 60;
     public int SampleFrames = 1;
-    public string csvFileName = "values.csv";
+    public string fileName = "values.csv";
+
+    public Material BlinkMaterial, BadMaterial, GoodMaterial;
+    public GameObject HandOpen, HandClosed;
 
     private List<FrameInfoIntermediate>[] frames;
 
@@ -26,12 +29,17 @@ public class GestureResolver : MonoBehaviour
     private float captureDuration = 0;
     public float gestureThreshold = 0.75f;
 
-    public delegate void GestureAction(bool[] visibility);
-    Dictionary<int, GestureAction> actions;
+    public float GrabRange = 5f;
+    public float SwipeRange = 20f;
+
+    private IGrabbable Held;
+
+    public Transform GrabCenter;
 
     // Start is called before the first frame update
     void Start()
     {
+        HandClosed.SetActive(false);
         var settings = JsonConvert.DeserializeObject<Settings>(System.IO.File.ReadAllText(Application.persistentDataPath + "/settings.json"));
         NumSamples = settings.NumSamples;
         SampleFrames = settings.SampleFrames;
@@ -47,19 +55,19 @@ public class GestureResolver : MonoBehaviour
             ExportToJson = true,
             ResolutionFeatureName = "id",
             ItemSubsetCountRatio = 0.6f,
-            TrainingDataPath = dataPath + "/" + csvFileName,
+            TrainingDataPath = dataPath + "/" + fileName,
             MaxItemCountInCategory = 7,
             TreeCount = 50,
             SplitMode = SplitMode.GINI
         };
         // Method to "grow" the forest
         forest = (Forest)ForestFactory.Create();
-        if (System.IO.File.GetLastWriteTime(dataPath + "/" + csvFileName) != settings.dateTime)
+        if (System.IO.File.GetLastWriteTime(dataPath + "/" + fileName) != settings.dateTime)
         {
             Debug.Log("Growing forest...");
             forest.Grow(p);
             forest.ImportFromJson(dataPath + "/trees");
-            settings.dateTime = System.IO.File.GetLastWriteTime(dataPath + "/" + csvFileName);
+            settings.dateTime = System.IO.File.GetLastWriteTime(dataPath + "/" + fileName);
             System.IO.File.WriteAllText(dataPath + "/settings.json", JsonConvert.SerializeObject(settings));
         }
         else
@@ -94,6 +102,17 @@ public class GestureResolver : MonoBehaviour
     // Update is called once per frame
     void FixedUpdate()
     {
+        if (!showingGesture)
+        {
+            if (Markers[1].GetComponent<TrackableBehaviour>().CurrentStatus != TrackableBehaviour.Status.TRACKED)
+            {
+                SetMaterial(BadMaterial);
+            }
+            else
+            {
+                SetMaterial(GoodMaterial);
+            }
+        }
         for (int i = 0; i < Markers.Length; i++)
         {
             var obj = Markers[i].transform;
@@ -145,19 +164,41 @@ public class GestureResolver : MonoBehaviour
                 if (captureDuration >= gestureThreshold)
                 {
                     captureDuration = 0;
-                    if (actions.ContainsKey(capturedAction))
+                    int visible = 0;
+                    visible += Markers[0].GetComponent<TrackableBehaviour>().CurrentStatus == TrackableBehaviour.Status.TRACKED ? 1 : 0;
+                    visible += Markers[1].GetComponent<TrackableBehaviour>().CurrentStatus == TrackableBehaviour.Status.TRACKED ? 1 : 0;
+                    switch (capturedAction)
                     {
-                        var visibility = new bool[Markers.Length];
-                        for (int i = 0; i < Markers.Length; i++)
-                        {
-                            visibility[i] = Markers[i].GetComponent<TrackableBehaviour>().CurrentStatus == TrackableBehaviour.Status.TRACKED;
-                        }
-                        actions[capturedAction](visibility);
-                        HalveFrameBuffers();
-                    }
-                    else
-                    {
-                        throw new ActionNotRegisteredException(capturedAction);
+                        case 1:
+                            if (visible > 0)
+                            {
+                                OnHandClose();
+                                HalveFrameBuffers();
+                            }
+                            break;
+                        case 2:
+                            if (visible > 1)
+                            {
+                                OnHandOpen();
+                                HalveFrameBuffers();
+                            }
+                            break;
+                        case 3:
+                            if (visible > 0)
+                            {
+                                OnSwipeRight();
+                                HalveFrameBuffers();
+                            }
+                            break;
+                        case 4:
+                            if (visible > 0)
+                            {
+                                OnSwipeLeft();
+                                HalveFrameBuffers();
+                            }
+                            break;
+                        default:
+                            break;
                     }
                 }
             }
@@ -171,10 +212,127 @@ public class GestureResolver : MonoBehaviour
                 frames[i].RemoveAt(0);
             }
         }
+        if (Held)
+        {
+            Held.GetUpdate(this);
+        }
+
+        foreach (var grabbable in FindObjectsOfType<IGrabbable>())
+        {
+            grabbable.ProximityUpdate(this);
+        }
     }
 
-    public void RegisterAction(int id, GestureAction action)
+    public void GoToTrain()
     {
-        actions[id] = action;
+        SceneManager.LoadScene("Train");
+    }
+
+    void SetMaterial(Material material)
+    {
+        HandClosed.GetComponent<Renderer>().material = material;
+        HandOpen.GetComponent<Renderer>().material = material;
+    }
+
+    public IEnumerator BlinkMarkers()
+    {
+        showingGesture = true;
+        SetMaterial(BlinkMaterial);
+        yield return new WaitForSeconds(0.5f);
+        showingGesture = false;
+    }
+
+    void OnHandClose()
+    {
+        HandOpen.SetActive(false);
+        HandClosed.SetActive(true);
+        StartCoroutine(BlinkMarkers());
+        var candidates = FindObjectsOfType<IGrabbable>();
+        IGrabbable closest = null;
+        float dist = Mathf.Infinity;
+        foreach (var candidate in candidates)
+        {
+            float curDist = Vector3.Distance(GetPosition(), candidate.transform.position);
+            if (curDist < GrabRange && curDist < dist)
+            {
+                closest = candidate;
+                dist = curDist;
+            }
+        }
+        if (closest)
+        {
+            Held = closest;
+            closest.Grab(this);
+        }
+    }
+
+    void OnHandOpen()
+    {
+        HandOpen.SetActive(true);
+        HandClosed.SetActive(false);
+        StartCoroutine(BlinkMarkers());
+        if (Held)
+        {
+            Held.Release();
+            Held = null;
+        }
+    }
+
+    void OnSwipeRight()
+    {
+        StartCoroutine(BlinkMarkers());
+        var candidates = FindObjectsOfType<ISwipable>();
+        ISwipable closest = null;
+        float dist = Mathf.Infinity;
+        foreach (var candidate in candidates)
+        {
+            float curDist = Vector3.Distance(GetPosition(), candidate.transform.position);
+            if (curDist < SwipeRange && curDist < dist)
+            {
+                closest = candidate;
+                dist = curDist;
+            }
+        }
+        if (closest)
+        {
+            closest.SwipeRight(this);
+        }
+
+    }
+
+    void OnSwipeLeft()
+    {
+        StartCoroutine(BlinkMarkers());
+        var candidates = FindObjectsOfType<ISwipable>();
+        ISwipable closest = null;
+        float dist = Mathf.Infinity;
+        foreach (var candidate in candidates)
+        {
+            float curDist = Vector3.Distance(GetPosition(), candidate.transform.position);
+            if (curDist < SwipeRange && curDist < dist)
+            {
+                closest = candidate;
+                dist = curDist;
+            }
+        }
+        if (closest)
+        {
+            closest.SwipeLeft(this);
+        }
+
+    }
+
+    public Vector3 GetPosition()
+    {
+        return GrabCenter.position;
+    }
+
+    public void ForceRelease()
+    {
+        if (Held)
+        {
+            Held.Release();
+            Held = null;
+        }
     }
 }

@@ -12,12 +12,12 @@ public class TabletSwipable : ISwipable
     {
         rend = GetComponent<Renderer>();
     }
-    public override void SwipeLeft(GestureResolver parent)
+    public override void SwipeLeft(GestureResolverExample parent)
     {
         StartCoroutine(Swipe(1));
     }
 
-    public override void SwipeRight(GestureResolver parent)
+    public override void SwipeRight(GestureResolverExample parent)
     {
         StartCoroutine(Swipe(-1));
     }

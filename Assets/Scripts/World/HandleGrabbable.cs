@@ -8,7 +8,7 @@ public class HandleGrabbable : IGrabbable
     public Transform Handle;
 
     public float Value;
-    public override void GetUpdate(GestureResolver parent)
+    public override void GetUpdate(GestureResolverExample parent)
     {
         var relHandPos = HandleCenter.InverseTransformPoint(parent.GetPosition());
         var rot = new Vector3(Mathf.Clamp(-Mathf.Rad2Deg * Mathf.Atan2(relHandPos.y, relHandPos.z), -90, 90), 0, 0);
@@ -20,7 +20,7 @@ public class HandleGrabbable : IGrabbable
         }
     }
 
-    public override void Grab(GestureResolver parent)
+    public override void Grab(GestureResolverExample parent)
     {
     }
 

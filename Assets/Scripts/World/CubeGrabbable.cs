@@ -16,12 +16,12 @@ public class CubeGrabbable : IGrabbable
         rb = GetComponent<Rigidbody>();
     }
 
-    public override void GetUpdate(GestureResolver parent)
+    public override void GetUpdate(GestureResolverExample parent)
     {
         transform.position = parent.GetPosition() + offset;
     }
 
-    public override void Grab(GestureResolver parent)
+    public override void Grab(GestureResolverExample parent)
     {
         rb.isKinematic = true;
         Held = true;
@@ -55,7 +55,7 @@ public class CubeGrabbable : IGrabbable
         }
     }
 
-    public override void ProximityUpdate(GestureResolver parent)
+    public override void ProximityUpdate(GestureResolverExample parent)
     {
         halo.SetActive(Vector3.Distance(parent.GetPosition(), transform.position) < parent.GrabRange);
     }
