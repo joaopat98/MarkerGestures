@@ -4,7 +4,8 @@ using UnityEngine;
 
 public class CubeGrabbable : IGrabbable
 {
-    private Vector3 offset;
+    private Vector3 offsetPos;
+    private Quaternion offsetRot;
     protected Rigidbody rb;
     public bool WasKinematic;
     private GameObject halo;
@@ -16,16 +17,18 @@ public class CubeGrabbable : IGrabbable
         rb = GetComponent<Rigidbody>();
     }
 
-    public override void GetUpdate(GestureResolverExample parent)
+    public override void GetUpdate(IGrabbing parent)
     {
-        transform.position = parent.GetPosition() + offset;
+        transform.position = parent.GetTransform().position + parent.GetTransform().TransformVector(offsetPos);
+        transform.rotation = parent.GetTransform().rotation * offsetRot;
     }
 
-    public override void Grab(GestureResolverExample parent)
+    public override void Grab(IGrabbing parent)
     {
         rb.isKinematic = true;
         Held = true;
-        offset = transform.position - parent.GetPosition();
+        offsetPos = parent.GetTransform().InverseTransformVector(transform.position - parent.GetTransform().position);
+        offsetRot = Quaternion.Inverse(parent.GetTransform().rotation) * transform.rotation;
     }
 
     public override void Release()
@@ -55,8 +58,8 @@ public class CubeGrabbable : IGrabbable
         }
     }
 
-    public override void ProximityUpdate(GestureResolverExample parent)
+    public override void ProximityUpdate(IGrabbing parent)
     {
-        halo.SetActive(Vector3.Distance(parent.GetPosition(), transform.position) < parent.GrabRange);
+        halo.SetActive(Vector3.Distance(parent.GetGrabPosition(), transform.position) < parent.GetGrabRange());
     }
 }

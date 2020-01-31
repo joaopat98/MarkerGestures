@@ -5,6 +5,9 @@ using Newtonsoft.Json;
 using UnityEngine.UI;
 using Vuforia;
 
+/// <summary>
+/// Component to capture data on the markers for the samples
+/// </summary>
 public class CaptureValues : MonoBehaviour
 {
     public GameObject[] Markers;

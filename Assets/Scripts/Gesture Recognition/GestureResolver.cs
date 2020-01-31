@@ -9,29 +9,56 @@ using Vuforia;
 using Newtonsoft.Json;
 using System.Linq;
 
-public class GestureResolver : MonoBehaviour
+/// <summary>
+/// Component used for gesture recognition (extend for custom behaviour)
+/// </summary>
+public abstract class GestureResolver : MonoBehaviour
 {
+    /// <summary>
+    /// List of AR Marker objects (input in editor)
+    /// </summary>
     public GameObject[] Markers;
-    public int NumSamples = 60;
-    public int SampleFrames = 1;
+    /// <summary>
+    /// Number of framegroups each sample will be divided into (loaded from file)
+    /// </summary>
+    private int NumSamples = 60;
+    /// <summary>
+    /// Number of frames in a sample (loaded from file)
+    /// </summary>
+    private int SampleFrames = 1;
     public string csvFileName = "values.csv";
-
+    /// <summary>
+    /// Buffer for recorded frames of information about the markers
+    /// </summary>
     private List<FrameInfoIntermediate>[] frames;
 
     private Forest forest;
-    private bool showingGesture = false;
 
-
+    /// <summary>
+    /// Gesture ID that was captured in the last frame
+    /// </summary>
     private int capturedAction = -1;
     private float captureDuration = 0;
+    /// <summary>
+    /// Amount of a time the captured gesture IDs must be around a specific gesture ID for that gesture to have been made by the user
+    /// </summary>
     public float gestureThreshold = 0.75f;
-
-    public delegate void GestureAction(bool[] visibility);
-    Dictionary<int, GestureAction> actions;
+    /// <summary>
+    /// Actions bound to each gesture
+    /// </summary>
+    /// <typeparam name="int">Id of the gesture</typeparam>
+    /// <typeparam name="System.Action">Action to be invoked</typeparam>
+    /// <returns></returns>
+    Dictionary<int, System.Action> actions = new Dictionary<int, System.Action>();
+    /// <summary>
+    /// Array with visibility information on each AR Marker (same order as in <see cref="Markers"></see>)
+    /// </summary>
+    protected bool[] visibility;
 
     // Start is called before the first frame update
-    void Start()
+    protected virtual void Start()
     {
+        visibility = new bool[Markers.Length];
         var settings = JsonConvert.DeserializeObject<Settings>(System.IO.File.ReadAllText(Application.persistentDataPath + "/settings.json"));
         NumSamples = settings.NumSamples;
         SampleFrames = settings.SampleFrames;
@@ -92,8 +119,12 @@ public class GestureResolver : MonoBehaviour
     }
 
     // Update is called once per frame
-    void FixedUpdate()
+    protected virtual void FixedUpdate()
     {
+        for (int i = 0; i < Markers.Length; i++)
+        {
+            visibility[i] = Markers[i].GetComponent<TrackableBehaviour>().CurrentStatus == TrackableBehaviour.Status.TRACKED;
+        }
         for (int i = 0; i < Markers.Length; i++)
         {
             var obj = Markers[i].transform;
@@ -147,12 +178,7 @@ public class GestureResolver : MonoBehaviour
                     captureDuration = 0;
                     if (actions.ContainsKey(capturedAction))
                     {
-                        var visibility = new bool[Markers.Length];
-                        for (int i = 0; i < Markers.Length; i++)
-                        {
-                            visibility[i] = Markers[i].GetComponent<TrackableBehaviour>().CurrentStatus == TrackableBehaviour.Status.TRACKED;
-                        }
-                        actions[capturedAction](visibility);
+                        actions[capturedAction]();
                         HalveFrameBuffers();
                     }
                     else
@@ -173,8 +199,13 @@ public class GestureResolver : MonoBehaviour
         }
     }
 
-    public void RegisterAction(int id, GestureAction action)
+    /// <summary>
+    /// Register a method to be invoked when the gesture associated with <paramref name="gestureID"/> is performed
+    /// </summary>
+    /// <param name="gestureID">ID associated to the pretended gesture</param>
+    /// <param name="action">Method to be invoked, must not receive any parameters</param>
+    public void RegisterAction(int gestureID, System.Action action)
     {
-        actions[id] = action;
+        actions[gestureID] = action;
     }
 }

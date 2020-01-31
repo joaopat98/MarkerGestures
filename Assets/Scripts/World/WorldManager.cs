@@ -24,7 +24,7 @@ public class WorldManager : MonoBehaviour
         dataPath = Application.persistentDataPath + "/songs/";
         char[] sep = { '/' };
         musicContainers.Add(MainContainer);
-        var songNames = Directory.GetDirectories(dataPath).Select<string,string>(s => s.Split(sep).Last()).ToArray();
+        var songNames = Directory.GetDirectories(dataPath).Select<string, string>(s => s.Split(sep).Last()).ToArray();
         var firstCube = Instantiate(MusicCubePrefab, mainContainerPos + new Vector3(0, 13.5f, 0), Quaternion.identity, transform).GetComponent<MusicCube>();
         firstCube.songName = songNames[0];
         firstCube.Init();
@@ -53,7 +53,7 @@ public class WorldManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if(testSwap)
+        if (testSwap)
         {
             testSwap = false;
             MainContainer.audioSource.time = MainContainer.audioSource.clip.length - 5;

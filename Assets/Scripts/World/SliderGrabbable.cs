@@ -14,15 +14,15 @@ public class SliderGrabbable : IGrabbable
         halo = transform.Find("Halo").gameObject;
     }
 
-    public override void GetUpdate(GestureResolverExample parent)
+    public override void GetUpdate(IGrabbing parent)
     {
-        var relHandPos = transform.parent.InverseTransformPoint(parent.GetPosition());
+        var relHandPos = transform.parent.InverseTransformPoint(parent.GetGrabPosition());
         var newPos = transform.localPosition;
         newPos.x = Mathf.Clamp(relHandPos.x, -xRange, xRange);
         transform.localPosition = newPos;
         Value = 1 - ((newPos.x + xRange) / (xRange * 2));
         CallBacks();
-        if (Vector3.Distance(transform.position, parent.GetPosition()) > parent.GrabRange)
+        if (Vector3.Distance(transform.position, parent.GetGrabPosition()) > parent.GetGrabRange())
         {
             parent.ForceRelease();
         }
@@ -46,7 +46,7 @@ public class SliderGrabbable : IGrabbable
         callBacks.Remove(callBack);
     }
 
-    public override void Grab(GestureResolverExample parent)
+    public override void Grab(IGrabbing parent)
     {
     }
 
@@ -66,8 +66,8 @@ public class SliderGrabbable : IGrabbable
 
     }
 
-    public override void ProximityUpdate(GestureResolverExample parent)
+    public override void ProximityUpdate(IGrabbing parent)
     {
-        halo.SetActive(Vector3.Distance(parent.GetPosition(), transform.position) < parent.GrabRange);
+        halo.SetActive(Vector3.Distance(parent.GetGrabPosition(), transform.position) < parent.GetGrabRange());
     }
 }

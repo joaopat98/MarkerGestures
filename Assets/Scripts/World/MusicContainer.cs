@@ -14,6 +14,7 @@ public class MusicContainer : MonoBehaviour
     {
         mCube = cube;
         mCube.transform.position = transform.position + new Vector3(0, -1f, 0);
+        mCube.transform.rotation = Quaternion.identity;
         if (IsMain)
         {
             if (cube.audioClip)
